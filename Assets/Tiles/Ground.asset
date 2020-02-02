@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 13312, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: basictiles_14
+  m_Name: Ground
   m_EditorClassIdentifier: 
   m_Sprite: {fileID: -1882185264919796135, guid: e190b6b07a98146d68f12fee20cdf968,
     type: 3}

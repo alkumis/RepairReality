@@ -12,9 +12,11 @@ public class PlayerController : MonoBehaviour
 
 	public CharacterState prevState = CharacterState.StandUp;
 
-	public Vector3 grabTilePos;
+	public Vector3Int grabTilePos = new Vector3Int(0, 0, 0);
 
 	public bool moving = false;
+
+	public bool grabbed = false;
 
 	public float moveSpeed = 0f;
 
@@ -38,6 +40,12 @@ public class PlayerController : MonoBehaviour
 
 	public bool pathExists = false;
 
+	public string grabSpriteName = "";
+
+	public bool grabSpriteExists = false;
+
+	public TileType grabType = TileType.Ground;
+
 	public GameObject grabTile = null;
 
 	public Tilemap brokenReality;
@@ -48,10 +56,23 @@ public class PlayerController : MonoBehaviour
 
 	public Tilemap passable;
 
+	public Tile groundTile;
+
+	public Sprite groundTileSprite;
+
+	public GameObject grabObj = null;
+
+    private SpriteRenderer grabTileSprite = null;
+
+	private SpriteRenderer grabObjSprite = null;
+
     private void Start()
     {
 		animator = GetComponent<Animator>();
+		grabTileSprite = grabTile.GetComponent<SpriteRenderer>();
+		grabObjSprite = grabObj.GetComponent<SpriteRenderer>();
 		//TileBase tempTile = brokenReality.GetTile(new Vector3Int(0,0,0));
+		//Debug.Log(environment.GetSprite(new Vector3Int(0, 2, 0)));
 		//brokenReality.SetTile(new Vector3Int(0, 0, 0), null);
 		//CheckForPath();
 	}
@@ -68,6 +89,7 @@ public class PlayerController : MonoBehaviour
 			case CharacterState.StandUp:
 
 				prevState = CharacterState.StandUp;
+
 				grabTile.transform.position = new Vector3(transform.position.x, transform.position.y + 1f, 0);
 
 				CheckForPath();
@@ -78,8 +100,14 @@ public class PlayerController : MonoBehaviour
 
 					if (Input.GetKeyDown(KeyCode.UpArrow))
 					{
-                        if(pathExists)
-						    currentState = CharacterState.WalkUp;
+						if (pathExists)
+						{
+							if (grabType != TileType.Exit)
+								currentState = CharacterState.WalkUp;
+
+							else
+								LevelEnd();
+						}
 
 						else if (!pathExists)
 							currentState = CharacterState.Bump;
@@ -99,6 +127,16 @@ public class PlayerController : MonoBehaviour
 					{
 						currentState = CharacterState.StandRight;
 					}
+
+                    if(Input.GetKeyDown(KeyCode.Space) && grabSpriteExists && !grabbed)
+                    {
+						TileGrab();
+                    }
+
+                    else if(Input.GetKeyDown(KeyCode.Space) && !grabSpriteExists && grabbed)
+                    {
+						TilePlace();
+                    }
 				}
 
 				break;
@@ -106,6 +144,7 @@ public class PlayerController : MonoBehaviour
 			case CharacterState.StandDown:
 
 				prevState = CharacterState.StandDown;
+
 				grabTile.transform.position = new Vector3(transform.position.x, transform.position.y - 1f, 0);
 
 				CheckForPath();
@@ -137,6 +176,16 @@ public class PlayerController : MonoBehaviour
 					{
 						currentState = CharacterState.StandRight;
 					}
+
+					if (Input.GetKeyDown(KeyCode.Space) && grabSpriteExists && !grabbed)
+					{
+						TileGrab();
+					}
+
+					else if (Input.GetKeyDown(KeyCode.Space) && !grabSpriteExists && grabbed)
+					{
+						TilePlace();
+					}
 				}
 
 				break;
@@ -144,6 +193,7 @@ public class PlayerController : MonoBehaviour
 			case CharacterState.StandLeft:
 
 				prevState = CharacterState.StandLeft;
+
 				grabTile.transform.position = new Vector3(transform.position.x - 1f, transform.position.y, 0);
 
 				CheckForPath();
@@ -175,6 +225,16 @@ public class PlayerController : MonoBehaviour
 					{
 						currentState = CharacterState.StandRight;
 					}
+
+					if (Input.GetKeyDown(KeyCode.Space) && grabSpriteExists && !grabbed)
+					{
+						TileGrab();
+					}
+
+					else if (Input.GetKeyDown(KeyCode.Space) && !grabSpriteExists && grabbed)
+					{
+						TilePlace();
+					}
 				}
 
 				break;
@@ -182,6 +242,7 @@ public class PlayerController : MonoBehaviour
 			case CharacterState.StandRight:
 
 				prevState = CharacterState.StandRight;
+
 				grabTile.transform.position = new Vector3(transform.position.x + 1f, transform.position.y, 0);
 
 				CheckForPath();
@@ -212,6 +273,16 @@ public class PlayerController : MonoBehaviour
 
 						else if (!pathExists)
 							currentState = CharacterState.Bump;
+					}
+
+					if (Input.GetKeyDown(KeyCode.Space) && grabSpriteExists && !grabbed)
+					{
+						TileGrab();
+					}
+
+					else if (Input.GetKeyDown(KeyCode.Space) && !grabSpriteExists && grabbed)
+					{
+						TilePlace();
 					}
 				}
 
@@ -275,7 +346,7 @@ public class PlayerController : MonoBehaviour
 				else if (prevState == CharacterState.StandLeft)
 					transform.DOPunchPosition(-transform.right * bumpStr, bumpDur, bumpVib, bumpElast, bumpSnapping).OnComplete(CanMove);
 
-				else if (prevState == CharacterState.StandDown)
+				else if (prevState == CharacterState.StandRight)
 					transform.DOPunchPosition(transform.right * bumpStr, bumpDur, bumpVib, bumpElast, bumpSnapping).OnComplete(CanMove);
 
 				currentState = prevState;
@@ -291,16 +362,79 @@ public class PlayerController : MonoBehaviour
 
     public void CheckForPath()
     {
-		if (!environment.HasTile(new Vector3Int((int)(grabTile.transform.position.x - 0.5f), (int)(grabTile.transform.position.y - 0.5f), 0)) && !passable.HasTile(new Vector3Int((int)(grabTile.transform.position.x - 0.5f), (int)(grabTile.transform.position.y - 0.5f), 0)))
+		grabObj.transform.position = grabTile.transform.position;
+		grabTilePos = new Vector3Int((int)(grabTile.transform.position.x - 0.5f), (int)(grabTile.transform.position.y - 0.5f), 0);
+
+		if (!environment.HasTile(grabTilePos) && !passable.HasTile(grabTilePos))
 		{
-			grabTile.GetComponent<SpriteRenderer>().color = Color.red;
+            if(!grabbed)
+			    grabTileSprite.color = Color.red;
+
 			pathExists = false;
+			grabSpriteExists = false;
+
+			if (brokenReality.HasTile(grabTilePos))
+			{
+				grabType = TileType.BrokenReality;
+			}
 		}
 
 		else
 		{
-			grabTile.GetComponent<SpriteRenderer>().color = Color.white;
+            if(!grabbed)
+				grabTileSprite.color = Color.white;
+
 			pathExists = true;
+			grabSpriteExists = true;
+
+            if(environment.GetSprite(grabTilePos).name == "basictiles_14")
+            {
+				grabType = TileType.Ground;
+			}
+
+			if (environment.GetSprite(grabTilePos).name == "basictiles_50")
+			{
+				grabType = TileType.Exit;
+			}
 		}
+	}
+
+    public void TileGrab()
+    {
+		if (grabType == TileType.Ground)
+		{
+			grabbed = true;
+			grabTileSprite.color = Color.clear;
+			environment.SetTile(grabTilePos, null);
+			grabObjSprite.sprite = groundTileSprite;
+			grabObj.transform.DOScale(0.8f, 0.25f);
+		}
+	}
+
+    public void TilePlace()
+    {
+        if(grabType == TileType.BrokenReality)
+        {
+			grabbed = false;
+			environment.SetTile(grabTilePos, groundTile);
+			grabObjSprite.sprite = null;
+			grabObj.transform.DOScale(1f, 0.1f);
+			CheckForPath();
+		}
+    }
+
+	public void LevelEnd()
+	{
+		moving = true;
+		transform.DOMove(grabTile.transform.position, 2f, false);
+		animator.Play("WalkUp", -1, 0);
+		animator.Play("WalkUp", 0, 0.25f);
+		animator.Play("WalkUp", 1, 0.5f);
+		animator.Play("WalkUp", -1, 0.75f);
+		animator.Play("WalkUp", -1, 1);
+		animator.Play("WalkUp", -1, 0);
+		animator.Play("WalkUp", -1, 0);
+		animator.Play("WalkUp", -1, 0);
+		animator.Play("WalkUp", -1, 0);
 	}
 }
