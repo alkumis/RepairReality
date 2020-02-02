@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using DG.Tweening;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
@@ -426,15 +427,24 @@ public class PlayerController : MonoBehaviour
 	public void LevelEnd()
 	{
 		moving = true;
-		transform.DOMove(grabTile.transform.position, 2f, false);
-		animator.Play("WalkUp", -1, 0);
-		animator.Play("WalkUp", 0, 0.25f);
-		animator.Play("WalkUp", 1, 0.5f);
-		animator.Play("WalkUp", -1, 0.75f);
-		animator.Play("WalkUp", -1, 1);
-		animator.Play("WalkUp", -1, 0);
-		animator.Play("WalkUp", -1, 0);
-		animator.Play("WalkUp", -1, 0);
-		animator.Play("WalkUp", -1, 0);
+		grabTile.SetActive(false);
+		grabObj.SetActive(false);
+		transform.DOMove(grabTile.transform.position, 2f, false).OnComplete(LoadNext);
+
+		if (prevState == CharacterState.StandUp)
+			animator.Play("SlowWalkUp");
+        else if (prevState == CharacterState.StandDown)
+			animator.Play("SlowWalkDown");
+		else if (prevState == CharacterState.StandLeft)
+			animator.Play("SlowWalkLeft");
+        else if (prevState == CharacterState.StandRight)
+			animator.Play("SlowWalkRight");
 	}
+
+    public void LoadNext()
+	{
+		SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+    }
+
+
 }
