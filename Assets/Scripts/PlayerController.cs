@@ -161,8 +161,14 @@ public class PlayerController : MonoBehaviour
 
 					else if (Input.GetKeyDown(KeyCode.DownArrow))
 					{
-                        if(pathExists)
-						    currentState = CharacterState.WalkDown;
+						if (pathExists)
+						{
+							if (grabType != TileType.Exit)
+								currentState = CharacterState.WalkDown;
+
+							else
+								LevelEnd();
+						}
 
 						else if (!pathExists)
 							currentState = CharacterState.Bump;
@@ -215,8 +221,14 @@ public class PlayerController : MonoBehaviour
 
 					else if (Input.GetKeyDown(KeyCode.LeftArrow))
 					{
-                        if(pathExists)
-						    currentState = CharacterState.WalkLeft;
+						if (pathExists)
+						{
+							if (grabType != TileType.Exit)
+								currentState = CharacterState.WalkLeft;
+
+							else
+								LevelEnd();
+						}
 
 						else if (!pathExists)
 							currentState = CharacterState.Bump;
@@ -269,8 +281,14 @@ public class PlayerController : MonoBehaviour
 
 					else if (Input.GetKeyDown(KeyCode.RightArrow))
 					{
-                        if(pathExists)
-						    currentState = CharacterState.WalkRight;
+						if (pathExists)
+						{
+							if (grabType != TileType.Exit)
+								currentState = CharacterState.WalkRight;
+
+							else
+								LevelEnd();
+						}
 
 						else if (!pathExists)
 							currentState = CharacterState.Bump;
