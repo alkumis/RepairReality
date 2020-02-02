@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 using DG.Tweening;
 
 public class PlayerController : MonoBehaviour
@@ -8,6 +9,8 @@ public class PlayerController : MonoBehaviour
 	bool[] inputs;
 
 	public CharacterState currentState = CharacterState.StandUp;
+
+	public CharacterState prevState = CharacterState.StandUp;
 
 	public Vector3 grabTilePos;
 
@@ -19,21 +22,43 @@ public class PlayerController : MonoBehaviour
 
 	public Ease moveEase;
 
+	public float bumpDur = 0f;
+
+	public float bumpStr = 0f;
+
+	public int bumpVib = 0;
+
+	public float bumpRand = 0f;
+
+	public float bumpElast = 1f;
+
+	public bool bumpSnapping = false;
+
+	public bool bumpFade = true;
+
+	public bool pathExists = false;
+
+	public GameObject grabTile = null;
+
+	public Tilemap brokenReality;
+
+	public Tilemap environment;
+
+	public Tilemap obstruction;
+
+	public Tilemap passable;
+
     private void Start()
     {
 		animator = GetComponent<Animator>();
-    }
+		//TileBase tempTile = brokenReality.GetTile(new Vector3Int(0,0,0));
+		//brokenReality.SetTile(new Vector3Int(0, 0, 0), null);
+		//CheckForPath();
+	}
 
     void Update()
 	{
-		//inputs[(int)KeyInput.GoRight] = Input.GetKey(KeyCode.RightArrow);
-		//inputs[(int)KeyInput.GoLeft] = Input.GetKey(KeyCode.LeftArrow);
-		//inputs[(int)KeyInput.GoDown] = Input.GetKey(KeyCode.DownArrow);
-		//inputs[(int)KeyInput.Jump] = Input.GetKey(KeyCode.Space);
-
 		CharacterUpdate();
-
-		//Debug.Log(currentState);
     }
 
 	public void CharacterUpdate ()
@@ -42,59 +67,75 @@ public class PlayerController : MonoBehaviour
 		{
 			case CharacterState.StandUp:
 
-				grabTilePos = new Vector3(transform.position.x, transform.position.y + 1f, 0);
+				prevState = CharacterState.StandUp;
+				grabTile.transform.position = new Vector3(transform.position.x, transform.position.y + 1f, 0);
+
+				CheckForPath();
 
 				if (!moving)
 				{
+					animator.Play("StandUp");
 
-					if (Input.GetKey(KeyCode.UpArrow))
+					if (Input.GetKeyDown(KeyCode.UpArrow))
 					{
-						currentState = CharacterState.WalkUp;
+                        if(pathExists)
+						    currentState = CharacterState.WalkUp;
+
+						else if (!pathExists)
+							currentState = CharacterState.Bump;
 					}
 
-					else if (Input.GetKey(KeyCode.DownArrow))
+					else if (Input.GetKeyDown(KeyCode.DownArrow))
 					{
-						currentState = CharacterState.WalkDown;
+						currentState = CharacterState.StandDown;
 					}
 
-					else if (Input.GetKey(KeyCode.LeftArrow))
+					else if (Input.GetKeyDown(KeyCode.LeftArrow))
 					{
-						currentState = CharacterState.WalkLeft;
+						currentState = CharacterState.StandLeft;
 					}
 
-					else if (Input.GetKey(KeyCode.RightArrow))
+					else if (Input.GetKeyDown(KeyCode.RightArrow))
 					{
-						currentState = CharacterState.WalkRight;
+						currentState = CharacterState.StandRight;
 					}
-
 				}
 
 				break;
 
 			case CharacterState.StandDown:
 
-				grabTilePos = new Vector3(transform.position.x, transform.position.y - 1f, 0);
+				prevState = CharacterState.StandDown;
+				grabTile.transform.position = new Vector3(transform.position.x, transform.position.y - 1f, 0);
+
+				CheckForPath();
 
 				if (!moving)
 				{
-					if (Input.GetKey(KeyCode.UpArrow))
+					animator.Play("StandDown");
+
+					if (Input.GetKeyDown(KeyCode.UpArrow))
 					{
-						currentState = CharacterState.WalkUp;
+						currentState = CharacterState.StandUp;
 					}
 
-					else if (Input.GetKey(KeyCode.DownArrow))
+					else if (Input.GetKeyDown(KeyCode.DownArrow))
 					{
-						currentState = CharacterState.WalkDown;
+                        if(pathExists)
+						    currentState = CharacterState.WalkDown;
+
+						else if (!pathExists)
+							currentState = CharacterState.Bump;
 					}
 
-					else if (Input.GetKey(KeyCode.LeftArrow))
+					else if (Input.GetKeyDown(KeyCode.LeftArrow))
 					{
-						currentState = CharacterState.WalkLeft;
+						currentState = CharacterState.StandLeft;
 					}
 
-					else if (Input.GetKey(KeyCode.RightArrow))
+					else if (Input.GetKeyDown(KeyCode.RightArrow))
 					{
-						currentState = CharacterState.WalkRight;
+						currentState = CharacterState.StandRight;
 					}
 				}
 
@@ -102,28 +143,37 @@ public class PlayerController : MonoBehaviour
 
 			case CharacterState.StandLeft:
 
-				grabTilePos = new Vector3(transform.position.x - 1f, transform.position.y, 0);
+				prevState = CharacterState.StandLeft;
+				grabTile.transform.position = new Vector3(transform.position.x - 1f, transform.position.y, 0);
+
+				CheckForPath();
 
 				if (!moving)
 				{
-					if (Input.GetKey(KeyCode.UpArrow))
+					animator.Play("StandLeft");
+
+					if (Input.GetKeyDown(KeyCode.UpArrow))
 					{
-						currentState = CharacterState.WalkUp;
+						currentState = CharacterState.StandUp;
 					}
 
-					else if (Input.GetKey(KeyCode.DownArrow))
+					else if (Input.GetKeyDown(KeyCode.DownArrow))
 					{
-						currentState = CharacterState.WalkDown;
+						currentState = CharacterState.StandDown;
 					}
 
-					else if (Input.GetKey(KeyCode.LeftArrow))
+					else if (Input.GetKeyDown(KeyCode.LeftArrow))
 					{
-						currentState = CharacterState.WalkLeft;
+                        if(pathExists)
+						    currentState = CharacterState.WalkLeft;
+
+						else if (!pathExists)
+							currentState = CharacterState.Bump;
 					}
 
-					else if (Input.GetKey(KeyCode.RightArrow))
+					else if (Input.GetKeyDown(KeyCode.RightArrow))
 					{
-						currentState = CharacterState.WalkRight;
+						currentState = CharacterState.StandRight;
 					}
 				}
 
@@ -131,28 +181,37 @@ public class PlayerController : MonoBehaviour
 
 			case CharacterState.StandRight:
 
-				grabTilePos = new Vector3(transform.position.x + 1f, transform.position.y, 0);
+				prevState = CharacterState.StandRight;
+				grabTile.transform.position = new Vector3(transform.position.x + 1f, transform.position.y, 0);
+
+				CheckForPath();
 
 				if (!moving)
 				{
-					if (Input.GetKey(KeyCode.UpArrow))
+					animator.Play("StandRight");
+
+					if (Input.GetKeyDown(KeyCode.UpArrow))
 					{
-						currentState = CharacterState.WalkUp;
+						currentState = CharacterState.StandUp;
 					}
 
-					else if (Input.GetKey(KeyCode.DownArrow))
+					else if (Input.GetKeyDown(KeyCode.DownArrow))
 					{
-						currentState = CharacterState.WalkDown;
+						currentState = CharacterState.StandDown;
 					}
 
-					else if (Input.GetKey(KeyCode.LeftArrow))
+					else if (Input.GetKeyDown(KeyCode.LeftArrow))
 					{
-						currentState = CharacterState.WalkLeft;
+						currentState = CharacterState.StandLeft;
 					}
 
-					else if (Input.GetKey(KeyCode.RightArrow))
+					else if (Input.GetKeyDown(KeyCode.RightArrow))
 					{
-						currentState = CharacterState.WalkRight;
+                        if(pathExists)
+						    currentState = CharacterState.WalkRight;
+
+						else if (!pathExists)
+							currentState = CharacterState.Bump;
 					}
 				}
 
@@ -160,53 +219,68 @@ public class PlayerController : MonoBehaviour
 
 			case CharacterState.WalkUp:
 
+				prevState = CharacterState.WalkUp;
 				moving = true;
-
 				transform.DOMove(new Vector3(transform.position.x, transform.position.y + 1f, 0), moveSpeed).OnComplete(CanMove).SetEase(moveEase);
-
+				grabTile.transform.DOMove(new Vector3(transform.position.x, transform.position.y + 2f, 0), moveSpeed).SetEase(moveEase);
 				animator.SetTrigger("WalkUp");
-
 				currentState = CharacterState.StandUp;
 
 				break;
 
 			case CharacterState.WalkDown:
 
+				prevState = CharacterState.WalkDown;
 				moving = true;
-
 				transform.DOMove(new Vector3(transform.position.x, transform.position.y - 1f, 0), moveSpeed).OnComplete(CanMove).SetEase(moveEase);
-
+                grabTile.transform.DOMove(new Vector3(transform.position.x, transform.position.y - 2f, 0), moveSpeed).SetEase(moveEase);
 				animator.SetTrigger("WalkDown");
-
 				currentState = CharacterState.StandDown;
 
 				break;
 
 			case CharacterState.WalkLeft:
 
+				prevState = CharacterState.WalkLeft;
 				moving = true;
-
 				transform.DOMove(new Vector3(transform.position.x - 1f, transform.position.y, 0), moveSpeed).OnComplete(CanMove).SetEase(moveEase);
-
+                grabTile.transform.DOMove(new Vector3(transform.position.x - 2f, transform.position.y, 0), moveSpeed).SetEase(moveEase);
 				animator.SetTrigger("WalkLeft");
-
 				currentState = CharacterState.StandLeft;
 
 				break;
 
 			case CharacterState.WalkRight:
 
-				Debug.Log("Moving right");
-
+				prevState = CharacterState.WalkRight;
 				moving = true;
-
 				transform.DOMove(new Vector3(transform.position.x + 1f, transform.position.y, 0), moveSpeed).OnComplete(CanMove).SetEase(moveEase);
-
+                grabTile.transform.DOMove(new Vector3(transform.position.x + 2f, transform.position.y, 0), moveSpeed).SetEase(moveEase);
 				animator.SetTrigger("WalkRight");
-
 				currentState = CharacterState.StandRight;
 
 				break;
+
+			case CharacterState.Bump:
+
+				moving = true;
+				//transform.DOShakePosition(bumpDur, bumpStr, bumpVib, bumpRand, bumpSnapping, bumpFade).OnComplete(CanMove);
+
+				if (prevState == CharacterState.StandUp)
+					transform.DOPunchPosition(transform.up * bumpStr, bumpDur, bumpVib, bumpElast, bumpSnapping).OnComplete(CanMove);
+
+				else if (prevState == CharacterState.StandDown)
+					transform.DOPunchPosition(-transform.up * bumpStr, bumpDur, bumpVib, bumpElast, bumpSnapping).OnComplete(CanMove);
+
+				else if (prevState == CharacterState.StandLeft)
+					transform.DOPunchPosition(-transform.right * bumpStr, bumpDur, bumpVib, bumpElast, bumpSnapping).OnComplete(CanMove);
+
+				else if (prevState == CharacterState.StandDown)
+					transform.DOPunchPosition(transform.right * bumpStr, bumpDur, bumpVib, bumpElast, bumpSnapping).OnComplete(CanMove);
+
+				currentState = prevState;
+
+                break;
 		}
 	}
 
@@ -214,5 +288,19 @@ public class PlayerController : MonoBehaviour
     {
 		moving = false;
 	}
-    
+
+    public void CheckForPath()
+    {
+		if (!environment.HasTile(new Vector3Int((int)(grabTile.transform.position.x - 0.5f), (int)(grabTile.transform.position.y - 0.5f), 0)) && !passable.HasTile(new Vector3Int((int)(grabTile.transform.position.x - 0.5f), (int)(grabTile.transform.position.y - 0.5f), 0)))
+		{
+			grabTile.GetComponent<SpriteRenderer>().color = Color.red;
+			pathExists = false;
+		}
+
+		else
+		{
+			grabTile.GetComponent<SpriteRenderer>().color = Color.white;
+			pathExists = true;
+		}
+	}
 }

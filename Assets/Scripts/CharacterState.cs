@@ -7,5 +7,6 @@
     StandLeft,
     WalkLeft,
     StandRight,
-    WalkRight
+    WalkRight,
+    Bump
 }
