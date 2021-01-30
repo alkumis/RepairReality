@@ -1,2 +1,2 @@
 # RepairReality
-GGJ 2020 Submission
+Global Game Jam 2020 submission
